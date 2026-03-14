@@ -1,7 +1,9 @@
-from flask import Flask, render_template, request, send_file, jsonify
+from flask import Flask, render_template, request, send_file, jsonify, make_response
+from werkzeug.utils import secure_filename
 import edge_tts
 import asyncio
 import os
+import re
 import uuid
 import time
 import threading
@@ -14,19 +16,21 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 # Ses dosyalarını belirli süre sonra temizle
 def cleanup_old_files():
     while True:
-        time.sleep(600)  # 10 dakikada bir kontrol
+        time.sleep(600)
         now = time.time()
         for f in os.listdir(OUTPUT_DIR):
             filepath = os.path.join(OUTPUT_DIR, f)
-            if os.path.isfile(filepath) and now - os.path.getmtime(filepath) > 1800:  # 30 dakika
+            if os.path.isfile(filepath) and now - os.path.getmtime(filepath) > 1800:
                 try:
                     os.remove(filepath)
-                    print(f"Temizlendi: {f}")
-                except:
+                except Exception:
                     pass
 
 cleanup_thread = threading.Thread(target=cleanup_old_files, daemon=True)
 cleanup_thread.start()
+
+# ── Geçerli ses isimlerini doğrulama için set ──
+VALID_VOICES = set()
 
 VOICES = {
     "Turkish": [
@@ -43,6 +47,7 @@ VOICES = {
         {"name": "en-US-BrianMultilingualNeural", "label": "Brian Multilingual (Male)"},
         {"name": "en-US-BrianNeural", "label": "Brian (Male)"},
         {"name": "en-US-ChristopherNeural", "label": "Christopher (Male)"},
+        {"name": "en-US-DavisNeural", "label": "Davis (Male)"},
         {"name": "en-US-EmmaMultilingualNeural", "label": "Emma Multilingual (Female)"},
         {"name": "en-US-EmmaNeural", "label": "Emma (Female)"},
         {"name": "en-US-EricNeural", "label": "Eric (Male)"},
@@ -203,6 +208,32 @@ VOICES = {
     ],
 }
 
+# Geçerli ses isimlerini topla
+for lang_voices in VOICES.values():
+    for v in lang_voices:
+        VALID_VOICES.add(v["name"])
+
+
+# ── Doğrulama yardımcıları ──
+def validate_rate(rate):
+    if re.match(r'^[+-]\d{1,3}%$', rate):
+        val = int(rate[:-1])
+        return -50 <= val <= 100
+    return False
+
+def validate_pitch(pitch):
+    if re.match(r'^[+-]\d{1,3}Hz$', pitch):
+        val = int(pitch[:-2])
+        return -50 <= val <= 50
+    return False
+
+def validate_volume(volume):
+    if re.match(r'^[+-]\d{1,3}%$', volume):
+        val = int(volume[:-1])
+        return -50 <= val <= 50
+    return False
+
+
 @app.route("/")
 def index():
     return render_template("index.html", voices=VOICES)
@@ -211,17 +242,33 @@ def index():
 @app.route("/synthesize", methods=["POST"])
 def synthesize():
     data = request.get_json()
+    if not data:
+        return jsonify({"error": "Geçersiz istek formatı"}), 400
+
     text = data.get("text", "").strip()
     voice = data.get("voice", "tr-TR-EmelNeural")
     rate = data.get("rate", "+0%")
     pitch = data.get("pitch", "+0Hz")
     volume = data.get("volume", "+0%")
 
+    # ── Doğrulamalar ──
     if not text:
         return jsonify({"error": "Metin boş olamaz"}), 400
 
     if len(text) > 25000:
         return jsonify({"error": "Metin 25000 karakterden uzun olamaz"}), 400
+
+    if voice not in VALID_VOICES:
+        return jsonify({"error": "Geçersiz ses seçimi"}), 400
+
+    if not validate_rate(rate):
+        return jsonify({"error": "Geçersiz hız değeri"}), 400
+
+    if not validate_pitch(pitch):
+        return jsonify({"error": "Geçersiz ton değeri"}), 400
+
+    if not validate_volume(volume):
+        return jsonify({"error": "Geçersiz ses seviyesi değeri"}), 400
 
     filename = f"{uuid.uuid4().hex}.mp3"
     filepath = os.path.join(OUTPUT_DIR, filename)
@@ -232,28 +279,35 @@ def synthesize():
         )
         await communicate.save(filepath)
 
+    # Güvenli asyncio — her istekte temiz event loop
+    loop = asyncio.new_event_loop()
     try:
-        asyncio.run(generate())
-        
-        # Dosyanın oluştuğunu kontrol et
-        if not os.path.exists(filepath):
-            return jsonify({"error": "Ses dosyası oluşturulamadı"}), 500
-            
-        return jsonify({"filename": filename})
+        loop.run_until_complete(generate())
     except Exception as e:
         error_msg = str(e)
         if "403" in error_msg:
             return jsonify({"error": "Edge TTS servisine erişim engellendi. Lütfen tekrar deneyin."}), 503
         return jsonify({"error": f"Seslendirme hatası: {error_msg}"}), 500
+    finally:
+        loop.close()
+
+    if not os.path.exists(filepath):
+        return jsonify({"error": "Ses dosyası oluşturulamadı"}), 500
+
+    file_size = os.path.getsize(filepath)
+    return jsonify({"filename": filename, "size": file_size})
 
 
 @app.route("/audio/<filename>")
 def serve_audio(filename):
+    filename = secure_filename(filename)
+    if not filename:
+        return jsonify({"error": "Geçersiz dosya adı"}), 400
+
     filepath = os.path.join(OUTPUT_DIR, filename)
     if not os.path.exists(filepath):
-        # Dosya bulunamazsa yeniden oluşturmayı dene
         return jsonify({"error": "Ses dosyası bulunamadı. Lütfen tekrar seslendir."}), 404
-    
+
     try:
         return send_file(filepath, mimetype="audio/mpeg", as_attachment=False)
     except Exception as e:
@@ -262,10 +316,29 @@ def serve_audio(filename):
 
 @app.route("/download/<filename>")
 def download_audio(filename):
+    filename = secure_filename(filename)
+    if not filename:
+        return jsonify({"error": "Geçersiz dosya adı"}), 400
+
     filepath = os.path.join(OUTPUT_DIR, filename)
     if not os.path.exists(filepath):
         return jsonify({"error": "Dosya bulunamadı"}), 404
-    return send_file(filepath, mimetype="audio/mpeg", as_attachment=True, download_name=f"seslendirme_{filename}")
+
+    try:
+        file_size = os.path.getsize(filepath)
+        response = make_response(
+            send_file(
+                filepath,
+                mimetype="audio/mpeg",
+                as_attachment=True,
+                download_name=f"sesforge_{filename}",
+            )
+        )
+        response.headers["Content-Length"] = file_size
+        response.headers["Cache-Control"] = "no-cache"
+        return response
+    except Exception as e:
+        return jsonify({"error": f"İndirme hatası: {str(e)}"}), 500
 
 
 if __name__ == "__main__":
