@@ -14,12 +14,16 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 # Ses dosyalarını belirli süre sonra temizle
 def cleanup_old_files():
     while True:
-        time.sleep(300)  # 5 dakikada bir kontrol
+        time.sleep(600)  # 10 dakikada bir kontrol
         now = time.time()
         for f in os.listdir(OUTPUT_DIR):
             filepath = os.path.join(OUTPUT_DIR, f)
-            if os.path.isfile(filepath) and now - os.path.getmtime(filepath) > 600:
-                os.remove(filepath)
+            if os.path.isfile(filepath) and now - os.path.getmtime(filepath) > 1800:  # 30 dakika
+                try:
+                    os.remove(filepath)
+                    print(f"Temizlendi: {f}")
+                except:
+                    pass
 
 cleanup_thread = threading.Thread(target=cleanup_old_files, daemon=True)
 cleanup_thread.start()
@@ -116,17 +120,30 @@ def synthesize():
 
     try:
         asyncio.run(generate())
+        
+        # Dosyanın oluştuğunu kontrol et
+        if not os.path.exists(filepath):
+            return jsonify({"error": "Ses dosyası oluşturulamadı"}), 500
+            
         return jsonify({"filename": filename})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        error_msg = str(e)
+        if "403" in error_msg:
+            return jsonify({"error": "Edge TTS servisine erişim engellendi. Lütfen tekrar deneyin."}), 503
+        return jsonify({"error": f"Seslendirme hatası: {error_msg}"}), 500
 
 
 @app.route("/audio/<filename>")
 def serve_audio(filename):
     filepath = os.path.join(OUTPUT_DIR, filename)
     if not os.path.exists(filepath):
-        return jsonify({"error": "Dosya bulunamadı"}), 404
-    return send_file(filepath, mimetype="audio/mpeg", as_attachment=False)
+        # Dosya bulunamazsa yeniden oluşturmayı dene
+        return jsonify({"error": "Ses dosyası bulunamadı. Lütfen tekrar seslendir."}), 404
+    
+    try:
+        return send_file(filepath, mimetype="audio/mpeg", as_attachment=False)
+    except Exception as e:
+        return jsonify({"error": f"Dosya okuma hatası: {str(e)}"}), 500
 
 
 @app.route("/download/<filename>")
