@@ -29,9 +29,9 @@ cleanup_thread = threading.Thread(target=cleanup_old_files, daemon=True)
 cleanup_thread.start()
 
 VOICES = {
-    "Türkçe": [
-        {"name": "tr-TR-AhmetNeural", "label": "Ahmet (Erkek)"},
-        {"name": "tr-TR-EmelNeural", "label": "Emel (Kadın)"},
+    "Turkish": [
+        {"name": "tr-TR-AhmetNeural", "label": "Ahmet (Male)"},
+        {"name": "tr-TR-EmelNeural", "label": "Emel (Female)"},
     ],
     "English (United States)": [
         {"name": "en-US-AnaNeural", "label": "Ana (Female)"},
@@ -72,137 +72,136 @@ VOICES = {
         {"name": "en-IN-NeerjaNeural", "label": "Neerja (Female)"},
         {"name": "en-IN-PrabhatNeural", "label": "Prabhat (Male)"},
     ],
-    "Español (España)": [
-        {"name": "es-ES-AlvaroNeural", "label": "Alvaro (Hombre)"},
-        {"name": "es-ES-ElviraNeural", "label": "Elvira (Mujer)"},
-        {"name": "es-ES-XimenaNeural", "label": "Ximena (Mujer)"},
+    "Spanish (Spain)": [
+        {"name": "es-ES-AlvaroNeural", "label": "Alvaro (Male)"},
+        {"name": "es-ES-ElviraNeural", "label": "Elvira (Female)"},
+        {"name": "es-ES-XimenaNeural", "label": "Ximena (Female)"},
     ],
-    "Español (Estados Unidos)": [
-        {"name": "es-US-AlonsoNeural", "label": "Alonso (Hombre)"},
-        {"name": "es-US-PalomaNeural", "label": "Paloma (Mujer)"},
+    "Spanish (United States)": [
+        {"name": "es-US-AlonsoNeural", "label": "Alonso (Male)"},
+        {"name": "es-US-PalomaNeural", "label": "Paloma (Female)"},
     ],
-    "Español (México)": [
-        {"name": "es-MX-DaliaNeural", "label": "Dalia (Mujer)"},
-        {"name": "es-MX-JorgeNeural", "label": "Jorge (Hombre)"},
+    "Spanish (Mexico)": [
+        {"name": "es-MX-DaliaNeural", "label": "Dalia (Female)"},
+        {"name": "es-MX-JorgeNeural", "label": "Jorge (Male)"},
     ],
-    "Español (Argentina)": [
-        {"name": "es-AR-ElenaNeural", "label": "Elena (Mujer)"},
-        {"name": "es-AR-TomasNeural", "label": "Tomas (Hombre)"},
+    "Spanish (Argentina)": [
+        {"name": "es-AR-ElenaNeural", "label": "Elena (Female)"},
+        {"name": "es-AR-TomasNeural", "label": "Tomas (Male)"},
     ],
-    "Français (France)": [
-        {"name": "fr-FR-DeniseNeural", "label": "Denise (Femme)"},
-        {"name": "fr-FR-EloiseNeural", "label": "Eloise (Femme)"},
-        {"name": "fr-FR-HenriNeural", "label": "Henri (Homme)"},
-        {"name": "fr-FR-RemyMultilingualNeural", "label": "Remy Multilingual (Homme)"},
-        {"name": "fr-FR-VivienneMultilingualNeural", "label": "Vivienne Multilingual (Femme)"},
+    "French (France)": [
+        {"name": "fr-FR-DeniseNeural", "label": "Denise (Female)"},
+        {"name": "fr-FR-EloiseNeural", "label": "Eloise (Female)"},
+        {"name": "fr-FR-HenriNeural", "label": "Henri (Male)"},
+        {"name": "fr-FR-RemyMultilingualNeural", "label": "Remy Multilingual (Male)"},
+        {"name": "fr-FR-VivienneMultilingualNeural", "label": "Vivienne Multilingual (Female)"},
     ],
-    "Français (Canada)": [
-        {"name": "fr-CA-AntoineNeural", "label": "Antoine (Homme)"},
-        {"name": "fr-CA-JeanNeural", "label": "Jean (Homme)"},
-        {"name": "fr-CA-SylvieNeural", "label": "Sylvie (Femme)"},
-        {"name": "fr-CA-ThierryNeural", "label": "Thierry (Homme)"},
+    "French (Canada)": [
+        {"name": "fr-CA-AntoineNeural", "label": "Antoine (Male)"},
+        {"name": "fr-CA-JeanNeural", "label": "Jean (Male)"},
+        {"name": "fr-CA-SylvieNeural", "label": "Sylvie (Female)"},
+        {"name": "fr-CA-ThierryNeural", "label": "Thierry (Male)"},
     ],
-    "Deutsch (Deutschland)": [
-        {"name": "de-DE-AmalaNeural", "label": "Amala (Weiblich)"},
-        {"name": "de-DE-ConradNeural", "label": "Conrad (Männlich)"},
-        {"name": "de-DE-FlorianMultilingualNeural", "label": "Florian Multilingual (Männlich)"},
-        {"name": "de-DE-KatjaNeural", "label": "Katja (Weiblich)"},
-        {"name": "de-DE-KillianNeural", "label": "Killian (Männlich)"},
-        {"name": "de-DE-SeraphinaMultilingualNeural", "label": "Seraphina Multilingual (Weiblich)"},
+    "German (Germany)": [
+        {"name": "de-DE-AmalaNeural", "label": "Amala (Female)"},
+        {"name": "de-DE-ConradNeural", "label": "Conrad (Male)"},
+        {"name": "de-DE-FlorianMultilingualNeural", "label": "Florian Multilingual (Male)"},
+        {"name": "de-DE-KatjaNeural", "label": "Katja (Female)"},
+        {"name": "de-DE-KillianNeural", "label": "Killian (Male)"},
+        {"name": "de-DE-SeraphinaMultilingualNeural", "label": "Seraphina Multilingual (Female)"},
     ],
-    "Deutsch (Österreich)": [
-        {"name": "de-AT-IngridNeural", "label": "Ingrid (Weiblich)"},
-        {"name": "de-AT-JonasNeural", "label": "Jonas (Männlich)"},
+    "German (Austria)": [
+        {"name": "de-AT-IngridNeural", "label": "Ingrid (Female)"},
+        {"name": "de-AT-JonasNeural", "label": "Jonas (Male)"},
     ],
-    "Italiano": [
-        {"name": "it-IT-DiegoNeural", "label": "Diego (Uomo)"},
-        {"name": "it-IT-ElsaNeural", "label": "Elsa (Donna)"},
-        {"name": "it-IT-GiuseppeMultilingualNeural", "label": "Giuseppe Multilingual (Uomo)"},
-        {"name": "it-IT-IsabellaNeural", "label": "Isabella (Donna)"},
+    "Italian": [
+        {"name": "it-IT-DiegoNeural", "label": "Diego (Male)"},
+        {"name": "it-IT-ElsaNeural", "label": "Elsa (Female)"},
+        {"name": "it-IT-GiuseppeMultilingualNeural", "label": "Giuseppe Multilingual (Male)"},
+        {"name": "it-IT-IsabellaNeural", "label": "Isabella (Female)"},
     ],
-    "Português (Brasil)": [
-        {"name": "pt-BR-AntonioNeural", "label": "Antonio (Masculino)"},
-        {"name": "pt-BR-FranciscaNeural", "label": "Francisca (Feminino)"},
-        {"name": "pt-BR-ThalitaMultilingualNeural", "label": "Thalita Multilingual (Feminino)"},
+    "Portuguese (Brazil)": [
+        {"name": "pt-BR-AntonioNeural", "label": "Antonio (Male)"},
+        {"name": "pt-BR-FranciscaNeural", "label": "Francisca (Female)"},
+        {"name": "pt-BR-ThalitaMultilingualNeural", "label": "Thalita Multilingual (Female)"},
     ],
-    "Português (Portugal)": [
-        {"name": "pt-PT-DuarteNeural", "label": "Duarte (Masculino)"},
-        {"name": "pt-PT-RaquelNeural", "label": "Raquel (Feminino)"},
+    "Portuguese (Portugal)": [
+        {"name": "pt-PT-DuarteNeural", "label": "Duarte (Male)"},
+        {"name": "pt-PT-RaquelNeural", "label": "Raquel (Female)"},
     ],
-    "Русский": [
-        {"name": "ru-RU-DmitryNeural", "label": "Dmitry (Мужской)"},
-        {"name": "ru-RU-SvetlanaNeural", "label": "Svetlana (Женский)"},
+    "Russian": [
+        {"name": "ru-RU-DmitryNeural", "label": "Dmitry (Male)"},
+        {"name": "ru-RU-SvetlanaNeural", "label": "Svetlana (Female)"},
     ],
-    "العربية (السعودية)": [
-        {"name": "ar-SA-HamedNeural", "label": "Hamed (ذكر)"},
-        {"name": "ar-SA-ZariyahNeural", "label": "Zariyah (أنثى)"},
+    "Arabic (Saudi Arabia)": [
+        {"name": "ar-SA-HamedNeural", "label": "Hamed (Male)"},
+        {"name": "ar-SA-ZariyahNeural", "label": "Zariyah (Female)"},
     ],
-    "العربية (الإمارات)": [
-        {"name": "ar-AE-FatimaNeural", "label": "Fatima (أنثى)"},
-        {"name": "ar-AE-HamdanNeural", "label": "Hamdan (ذكر)"},
+    "Arabic (UAE)": [
+        {"name": "ar-AE-FatimaNeural", "label": "Fatima (Female)"},
+        {"name": "ar-AE-HamdanNeural", "label": "Hamdan (Male)"},
     ],
-    "العربية (مصر)": [
-        {"name": "ar-EG-SalmaNeural", "label": "Salma (أنثى)"},
-        {"name": "ar-EG-ShakirNeural", "label": "Shakir (ذكر)"},
+    "Arabic (Egypt)": [
+        {"name": "ar-EG-SalmaNeural", "label": "Salma (Female)"},
+        {"name": "ar-EG-ShakirNeural", "label": "Shakir (Male)"},
     ],
-    "中文 (普通话)": [
-        {"name": "zh-CN-XiaoxiaoNeural", "label": "Xiaoxiao (女)"},
-        {"name": "zh-CN-XiaoyiNeural", "label": "Xiaoyi (女)"},
-        {"name": "zh-CN-YunjianNeural", "label": "Yunjian (男)"},
-        {"name": "zh-CN-YunxiNeural", "label": "Yunxi (男)"},
-        {"name": "zh-CN-YunxiaNeural", "label": "Yunxia (男)"},
-        {"name": "zh-CN-YunyangNeural", "label": "Yunyang (男)"},
+    "Chinese (Mandarin)": [
+        {"name": "zh-CN-XiaoxiaoNeural", "label": "Xiaoxiao (Female)"},
+        {"name": "zh-CN-XiaoyiNeural", "label": "Xiaoyi (Female)"},
+        {"name": "zh-CN-YunjianNeural", "label": "Yunjian (Male)"},
+        {"name": "zh-CN-YunxiNeural", "label": "Yunxi (Male)"},
+        {"name": "zh-CN-YunxiaNeural", "label": "Yunxia (Male)"},
+        {"name": "zh-CN-YunyangNeural", "label": "Yunyang (Male)"},
     ],
-    "中文 (台湾)": [
-        {"name": "zh-TW-HsiaoChenNeural", "label": "HsiaoChen (女)"},
-        {"name": "zh-TW-HsiaoYuNeural", "label": "HsiaoYu (女)"},
-        {"name": "zh-TW-YunJheNeural", "label": "YunJhe (男)"},
+    "Chinese (Taiwan)": [
+        {"name": "zh-TW-HsiaoChenNeural", "label": "HsiaoChen (Female)"},
+        {"name": "zh-TW-HsiaoYuNeural", "label": "HsiaoYu (Female)"},
+        {"name": "zh-TW-YunJheNeural", "label": "YunJhe (Male)"},
     ],
-    "中文 (香港)": [
-        {"name": "zh-HK-HiuGaaiNeural", "label": "HiuGaai (女)"},
-        {"name": "zh-HK-HiuMaanNeural", "label": "HiuMaan (女)"},
-        {"name": "zh-HK-WanLungNeural", "label": "WanLung (男)"},
+    "Chinese (Hong Kong)": [
+        {"name": "zh-HK-HiuGaaiNeural", "label": "HiuGaai (Female)"},
+        {"name": "zh-HK-HiuMaanNeural", "label": "HiuMaan (Female)"},
+        {"name": "zh-HK-WanLungNeural", "label": "WanLung (Male)"},
     ],
-    "日本語": [
-        {"name": "ja-JP-KeitaNeural", "label": "Keita (男性)"},
-        {"name": "ja-JP-NanamiNeural", "label": "Nanami (女性)"},
+    "Japanese": [
+        {"name": "ja-JP-KeitaNeural", "label": "Keita (Male)"},
+        {"name": "ja-JP-NanamiNeural", "label": "Nanami (Female)"},
     ],
-    "한국어": [
-        {"name": "ko-KR-HyunsuMultilingualNeural", "label": "Hyunsu Multilingual (남성)"},
-        {"name": "ko-KR-InJoonNeural", "label": "InJoon (남성)"},
-        {"name": "ko-KR-SunHiNeural", "label": "SunHi (여성)"},
+    "Korean": [
+        {"name": "ko-KR-HyunsuMultilingualNeural", "label": "Hyunsu Multilingual (Male)"},
+        {"name": "ko-KR-InJoonNeural", "label": "InJoon (Male)"},
+        {"name": "ko-KR-SunHiNeural", "label": "SunHi (Female)"},
     ],
-    "हिन्दी": [
-        {"name": "hi-IN-MadhurNeural", "label": "Madhur (पुरुष)"},
-        {"name": "hi-IN-SwaraNeural", "label": "Swara (महिला)"},
+    "Hindi": [
+        {"name": "hi-IN-MadhurNeural", "label": "Madhur (Male)"},
+        {"name": "hi-IN-SwaraNeural", "label": "Swara (Female)"},
     ],
-    "Nederlands": [
-        {"name": "nl-NL-ColetteNeural", "label": "Colette (Vrouw)"},
-        {"name": "nl-NL-FennaNeural", "label": "Fenna (Vrouw)"},
-        {"name": "nl-NL-MaartenNeural", "label": "Maarten (Man)"},
+    "Dutch": [
+        {"name": "nl-NL-ColetteNeural", "label": "Colette (Female)"},
+        {"name": "nl-NL-FennaNeural", "label": "Fenna (Female)"},
+        {"name": "nl-NL-MaartenNeural", "label": "Maarten (Male)"},
     ],
-    "Polski": [
-        {"name": "pl-PL-MarekNeural", "label": "Marek (Mężczyzna)"},
-        {"name": "pl-PL-ZofiaNeural", "label": "Zofia (Kobieta)"},
+    "Polish": [
+        {"name": "pl-PL-MarekNeural", "label": "Marek (Male)"},
+        {"name": "pl-PL-ZofiaNeural", "label": "Zofia (Female)"},
     ],
-    "Svenska": [
-        {"name": "sv-SE-MattiasNeural", "label": "Mattias (Man)"},
-        {"name": "sv-SE-SofieNeural", "label": "Sofie (Kvinna)"},
+    "Swedish": [
+        {"name": "sv-SE-MattiasNeural", "label": "Mattias (Male)"},
+        {"name": "sv-SE-SofieNeural", "label": "Sofie (Female)"},
     ],
-    "Norsk": [
-        {"name": "nb-NO-FinnNeural", "label": "Finn (Mann)"},
-        {"name": "nb-NO-PernilleNeural", "label": "Pernille (Kvinne)"},
+    "Norwegian": [
+        {"name": "nb-NO-FinnNeural", "label": "Finn (Male)"},
+        {"name": "nb-NO-PernilleNeural", "label": "Pernille (Female)"},
     ],
-    "Dansk": [
-        {"name": "da-DK-ChristelNeural", "label": "Christel (Kvinde)"},
-        {"name": "da-DK-JeppeNeural", "label": "Jeppe (Mand)"},
+    "Danish": [
+        {"name": "da-DK-ChristelNeural", "label": "Christel (Female)"},
+        {"name": "da-DK-JeppeNeural", "label": "Jeppe (Male)"},
     ],
-    "Suomi": [
-        {"name": "fi-FI-HarriNeural", "label": "Harri (Mies)"},
-        {"name": "fi-FI-NooraNeural", "label": "Noora (Nainen)"},
+    "Finnish": [
+        {"name": "fi-FI-HarriNeural", "label": "Harri (Male)"},
+        {"name": "fi-FI-NooraNeural", "label": "Noora (Female)"},
     ],
 }
-
 
 @app.route("/")
 def index():
