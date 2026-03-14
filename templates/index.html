@@ -78,20 +78,9 @@
                   class="language-search"
                 />
                 <select id="languageSelect" size="5" class="language-dropdown">
-                  {% for lang in voices %}
-                  <option
-                    value="{{ lang }}"
-                    {%
-                    if
-                    lang=""
-                    ="Türkçe"
-                    %}selected{%
-                    endif
-                    %}
-                  >
-                    {{ lang }}
-                  </option>
-                  {% endfor %}
+                    {% for lang in voices %}
+                    <option value="{{ lang }}" {% if lang == "Türkçe" %}selected{% endif %}>{{ lang }}</option>
+                    {% endfor %}
                 </select>
               </div>
             </div>
