@@ -47,7 +47,6 @@ VOICES = {
         {"name": "en-US-BrianMultilingualNeural", "label": "Brian Multilingual (Male)"},
         {"name": "en-US-BrianNeural", "label": "Brian (Male)"},
         {"name": "en-US-ChristopherNeural", "label": "Christopher (Male)"},
-        {"name": "en-US-DavidNeural", "label": "David (Male)"},
         {"name": "en-US-EmmaMultilingualNeural", "label": "Emma Multilingual (Female)"},
         {"name": "en-US-EmmaNeural", "label": "Emma (Female)"},
         {"name": "en-US-EricNeural", "label": "Eric (Male)"},
