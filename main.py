@@ -40,7 +40,7 @@ VOICES = {
     "English (United States)": [
         {"name": "en-US-AnaNeural", "label": "Ana (Female)"},
         {"name": "en-US-AndrewMultilingualNeural", "label": "Andrew Multilingual (Male)"},
-        {"name": "en-US-AndrewNeural", "label": "Andrew (Male)"},
+        {"name": "en-US-AndrewNeural", "label": "David (Male)"},
         {"name": "en-US-AriaNeural", "label": "Aria (Female)"},
         {"name": "en-US-AvaMultilingualNeural", "label": "Ava Multilingual (Female)"},
         {"name": "en-US-AvaNeural", "label": "Ava (Female)"},
