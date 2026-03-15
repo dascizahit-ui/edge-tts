@@ -6,40 +6,129 @@ import os
 import re
 import uuid
 import time
+import json
 import threading
-from collections import deque
 
 app = Flask(__name__)
 
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# ── Seslendirme geçmişi (son 10 kayıt) ──
-synthesis_history = deque(maxlen=10)
+HISTORY_FILE = os.path.join(OUTPUT_DIR, "history.json")
+MAX_HISTORY = 10
 history_lock = threading.Lock()
 
 
-# Ses dosyalarını belirli süre sonra temizle
+# ── Kalıcı geçmiş yönetimi (JSON dosyası) ──
+def load_history():
+    """Disk'ten geçmişi oku. Dosyası silinmiş kayıtları filtrele."""
+    try:
+        with open(HISTORY_FILE, "r", encoding="utf-8") as f:
+            entries = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        entries = []
+
+    # Dosyası hâlâ mevcut olanları filtrele
+    active = []
+    for entry in entries:
+        filepath = os.path.join(OUTPUT_DIR, entry.get("filename", ""))
+        if os.path.exists(filepath):
+            active.append(entry)
+
+    # Filtreleme sonrası değiştiyse kaydet
+    if len(active) != len(entries):
+        _write_history(active)
+
+    return active
+
+
+def _write_history(entries):
+    """Geçmişi diske yaz (lock dışından çağırma)."""
+    try:
+        with open(HISTORY_FILE, "w", encoding="utf-8") as f:
+            json.dump(entries, f, ensure_ascii=False)
+    except Exception:
+        pass
+
+
+def add_history_entry(entry):
+    """Yeni kayıt ekle, 10'u aşarsa en eskiyi sil (dosyası dahil)."""
+    with history_lock:
+        entries = load_history()
+        entries.insert(0, entry)  # en yeni başa
+
+        # 10'u aşan eski kayıtları sil
+        while len(entries) > MAX_HISTORY:
+            old = entries.pop()
+            old_path = os.path.join(OUTPUT_DIR, old.get("filename", ""))
+            if os.path.exists(old_path):
+                try:
+                    os.remove(old_path)
+                except Exception:
+                    pass
+
+        _write_history(entries)
+        return entries
+
+
+def get_history_entries():
+    """Güncel geçmişi döndür (en yeniden eskiye)."""
+    with history_lock:
+        return load_history()
+
+
+def delete_history_entry(filename):
+    """Tek bir kaydı geçmişten ve diskten sil."""
+    with history_lock:
+        entries = load_history()
+        found = False
+        new_entries = []
+        for entry in entries:
+            if entry.get("filename") == filename:
+                found = True
+            else:
+                new_entries.append(entry)
+        _write_history(new_entries)
+
+    if found:
+        filepath = os.path.join(OUTPUT_DIR, filename)
+        if os.path.exists(filepath):
+            try:
+                os.remove(filepath)
+            except Exception:
+                pass
+
+    return found
+
+
+# ── Eski dosya temizliği (30 dk) ──
 def cleanup_old_files():
     while True:
         time.sleep(600)
         now = time.time()
+        with history_lock:
+            entries = load_history()
+            # Geçmişteki dosya adlarını topla — bunlara dokunma
+            history_filenames = {e.get("filename") for e in entries}
+
+        # Geçmişte OLMAYAN eski dosyaları temizle
         for f in os.listdir(OUTPUT_DIR):
+            if f == "history.json":
+                continue
             filepath = os.path.join(OUTPUT_DIR, f)
-            if os.path.isfile(filepath) and now - os.path.getmtime(filepath) > 1800:
+            if not os.path.isfile(filepath):
+                continue
+            if f in history_filenames:
+                continue
+            if now - os.path.getmtime(filepath) > 1800:
                 try:
                     os.remove(filepath)
                 except Exception:
                     pass
-        # Geçmişten silinen dosyaları da temizle
+
+        # Geçmişteki dosyası silinmiş kayıtları temizle
         with history_lock:
-            to_keep = deque(maxlen=10)
-            for entry in synthesis_history:
-                filepath = os.path.join(OUTPUT_DIR, entry["filename"])
-                if os.path.exists(filepath):
-                    to_keep.append(entry)
-            synthesis_history.clear()
-            synthesis_history.extend(to_keep)
+            load_history()  # bu zaten filtreliyor ve kaydediyor
 
 
 cleanup_thread = threading.Thread(target=cleanup_old_files, daemon=True)
@@ -223,12 +312,10 @@ VOICES = {
     ],
 }
 
-# Geçerli ses isimlerini topla
 for lang_voices in VOICES.values():
     for v in lang_voices:
         VALID_VOICES.add(v["name"])
 
-# Ses adı → etiket eşlemesi (geçmiş için)
 VOICE_LABEL_MAP = {}
 for lang, lang_voices in VOICES.items():
     for v in lang_voices:
@@ -257,14 +344,11 @@ def validate_volume(volume):
     return False
 
 
-# ── Tahmini süre hesaplayıcı ──
 def estimate_duration_seconds(text, rate_str):
     base_chars_per_sec = 14.0
     rate_val = int(rate_str.replace("%", ""))
-    speed_multiplier = 1.0 + (rate_val / 100.0)
-    speed_multiplier = max(0.3, min(2.5, speed_multiplier))
-    effective_cps = base_chars_per_sec * speed_multiplier
-    return round(len(text.strip()) / effective_cps)
+    speed_multiplier = max(0.3, min(2.5, 1.0 + (rate_val / 100.0)))
+    return round(len(text.strip()) / (base_chars_per_sec * speed_multiplier))
 
 
 def format_duration(seconds):
@@ -280,7 +364,6 @@ def format_duration(seconds):
         return f"{hours} sa {mins} dk" if mins > 0 else f"{hours} sa"
 
 
-# ── Metin bölme yardımcısı ──
 def split_text_smart(text):
     midpoint = len(text) // 2
     search_start = max(0, midpoint - len(text) // 5)
@@ -342,41 +425,17 @@ def estimate():
 
 @app.route("/history", methods=["GET"])
 def get_history():
-    """Son seslendirme geçmişini döndürür (en yeniden en eskiye)."""
-    with history_lock:
-        active = []
-        for entry in reversed(synthesis_history):
-            filepath = os.path.join(OUTPUT_DIR, entry["filename"])
-            if os.path.exists(filepath):
-                active.append(entry)
-    # jsonify lock dışında — response oluşturma lock'u tutmasın
-    return jsonify({"history": active})
+    entries = get_history_entries()
+    return jsonify({"history": entries})
 
 
 @app.route("/history/<filename>", methods=["DELETE"])
-def delete_history(filename):
+def delete_history_route(filename):
     filename = secure_filename(filename)
     if not filename:
         return jsonify({"error": "Geçersiz dosya adı"}), 400
 
-    filepath = os.path.join(OUTPUT_DIR, filename)
-
-    with history_lock:
-        to_keep = deque(maxlen=10)
-        found = False
-        for entry in synthesis_history:
-            if entry["filename"] == filename:
-                found = True
-            else:
-                to_keep.append(entry)
-        synthesis_history.clear()
-        synthesis_history.extend(to_keep)
-
-    if os.path.exists(filepath):
-        try:
-            os.remove(filepath)
-        except Exception:
-            pass
+    found = delete_history_entry(filename)
 
     if not found:
         return jsonify({"error": "Kayıt bulunamadı"}), 404
@@ -487,7 +546,6 @@ def synthesize():
     file_size = os.path.getsize(final_filepath)
     estimated_duration = estimate_duration_seconds(text, rate)
 
-    # ── Geçmişe ekle ──
     text_preview = text[:120].replace("\n", " ")
     if len(text) > 120:
         text_preview += "…"
@@ -507,16 +565,8 @@ def synthesize():
         "timestamp": int(time.time()),
     }
 
-    with history_lock:
-        synthesis_history.append(history_entry)
-
-    # Geçmiş entry'sini de yanıta ekle — frontend ayrıca GET yapmak zorunda kalmasın
-    with history_lock:
-        current_history = []
-        for entry in reversed(synthesis_history):
-            filepath = os.path.join(OUTPUT_DIR, entry["filename"])
-            if os.path.exists(filepath):
-                current_history.append(entry)
+    # Geçmişe ekle ve güncel listeyi al (10'u aşanlar otomatik silinir)
+    current_history = add_history_entry(history_entry)
 
     return jsonify({
         "filename": final_filename,
