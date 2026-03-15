@@ -115,6 +115,7 @@ window._showPlayer = function (filename) {
   void playerSection.offsetWidth;
   playerSection.classList.add("visible");
   generateWaveformBars();
+  audioPlayer.play().catch(() => {});  // ← bu satır
 };
 
 // ---- Synthesize ----

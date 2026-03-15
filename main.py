@@ -14,7 +14,7 @@ app = Flask(__name__)
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# ── Seslendirme geçmişi (son 50 kayıt) ──
+# ── Seslendirme geçmişi (son 10 kayıt) ──
 synthesis_history = deque(maxlen=10)
 history_lock = threading.Lock()
 
@@ -259,24 +259,15 @@ def validate_volume(volume):
 
 # ── Tahmini süre hesaplayıcı ──
 def estimate_duration_seconds(text, rate_str):
-    """
-    Karakter sayısı ve hız ayarına göre tahmini ses süresi (saniye).
-    Ortalama TTS hızı: ~14 karakter/saniye (normal hız).
-    Rate parametresi bunu oranlar: +50% → 1.5x hızlı → süre / 1.5
-    """
     base_chars_per_sec = 14.0
     rate_val = int(rate_str.replace("%", ""))
     speed_multiplier = 1.0 + (rate_val / 100.0)
     speed_multiplier = max(0.3, min(2.5, speed_multiplier))
-
     effective_cps = base_chars_per_sec * speed_multiplier
-    char_count = len(text.strip())
-
-    return round(char_count / effective_cps)
+    return round(len(text.strip()) / effective_cps)
 
 
 def format_duration(seconds):
-    """Saniyeyi okunabilir formata çevirir."""
     if seconds < 60:
         return f"{seconds} sn"
     elif seconds < 3600:
@@ -291,13 +282,7 @@ def format_duration(seconds):
 
 # ── Metin bölme yardımcısı ──
 def split_text_smart(text):
-    """
-    Metni ortadan ikiye böler ama cümle veya en azından kelime sınırından keser.
-    Cümle sonu işaretleri (.  !  ?  ;  \\n) tercih edilir.
-    Bulunamazsa en yakın boşluktan keser.
-    """
     midpoint = len(text) // 2
-
     search_start = max(0, midpoint - len(text) // 5)
     search_end = min(len(text), midpoint + len(text) // 5)
     search_zone = text[search_start:search_end]
@@ -332,7 +317,6 @@ def index():
 
 @app.route("/estimate", methods=["POST"])
 def estimate():
-    """Metin ve hız ayarına göre tahmini ses süresini döndürür."""
     data = request.get_json()
     if not data:
         return jsonify({"error": "Geçersiz istek formatı"}), 400
@@ -365,12 +349,12 @@ def get_history():
             filepath = os.path.join(OUTPUT_DIR, entry["filename"])
             if os.path.exists(filepath):
                 active.append(entry)
-        return jsonify({"history": active})
+    # jsonify lock dışında — response oluşturma lock'u tutmasın
+    return jsonify({"history": active})
 
 
 @app.route("/history/<filename>", methods=["DELETE"])
 def delete_history(filename):
-    """Geçmişten bir kaydı ve ses dosyasını siler."""
     filename = secure_filename(filename)
     if not filename:
         return jsonify({"error": "Geçersiz dosya adı"}), 400
@@ -412,22 +396,16 @@ def synthesize():
     pitch = data.get("pitch", "+0Hz")
     volume = data.get("volume", "+0%")
 
-    # ── Doğrulamalar ──
     if not text:
         return jsonify({"error": "Metin boş olamaz"}), 400
-
     if len(text) > 25000:
         return jsonify({"error": "Metin 25000 karakterden uzun olamaz"}), 400
-
     if voice not in VALID_VOICES:
         return jsonify({"error": "Geçersiz ses seçimi"}), 400
-
     if not validate_rate(rate):
         return jsonify({"error": "Geçersiz hız değeri"}), 400
-
     if not validate_pitch(pitch):
         return jsonify({"error": "Geçersiz ton değeri"}), 400
-
     if not validate_volume(volume):
         return jsonify({"error": "Geçersiz ses seviyesi değeri"}), 400
 
@@ -438,9 +416,7 @@ def synthesize():
     use_parallel = len(text) > 5000
 
     if use_parallel:
-        # ── Paralel seslendirme: metni ikiye böl, aynı anda seslendir ──
         part1_text, part2_text = split_text_smart(text)
-
         part1_file = os.path.join(OUTPUT_DIR, f"_tmp_{uuid.uuid4().hex}.mp3")
         part2_file = os.path.join(OUTPUT_DIR, f"_tmp_{uuid.uuid4().hex}.mp3")
 
@@ -448,11 +424,9 @@ def synthesize():
             task1 = edge_tts.Communicate(
                 part1_text, voice, rate=rate, pitch=pitch, volume=volume
             ).save(part1_file)
-
             task2 = edge_tts.Communicate(
                 part2_text, voice, rate=rate, pitch=pitch, volume=volume
             ).save(part2_file)
-
             await asyncio.gather(task1, task2)
 
         loop = asyncio.new_event_loop()
@@ -472,7 +446,6 @@ def synthesize():
         finally:
             loop.close()
 
-        # ── MP3 dosyalarını sıralı birleştir ──
         try:
             with open(final_filepath, "wb") as outfile:
                 for part_file in (part1_file, part2_file):
@@ -489,9 +462,7 @@ def synthesize():
                         os.remove(tmp)
                     except Exception:
                         pass
-
     else:
-        # ── Tek parça seslendirme (5000 karakter ve altı) ──
         async def generate_single():
             communicate = edge_tts.Communicate(
                 text, voice, rate=rate, pitch=pitch, volume=volume
@@ -539,6 +510,14 @@ def synthesize():
     with history_lock:
         synthesis_history.append(history_entry)
 
+    # Geçmiş entry'sini de yanıta ekle — frontend ayrıca GET yapmak zorunda kalmasın
+    with history_lock:
+        current_history = []
+        for entry in reversed(synthesis_history):
+            filepath = os.path.join(OUTPUT_DIR, entry["filename"])
+            if os.path.exists(filepath):
+                current_history.append(entry)
+
     return jsonify({
         "filename": final_filename,
         "size": file_size,
@@ -546,6 +525,7 @@ def synthesize():
         "estimated_duration": estimated_duration,
         "duration_display": format_duration(estimated_duration),
         "parallel": use_parallel,
+        "history": current_history,
     })
 
 

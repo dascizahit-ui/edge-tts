@@ -281,17 +281,11 @@
 
         <!-- Controls -->
         <section class="controls-section">
-          <!-- Language & Voice -->
           <div class="control-row">
             <div class="control-group">
               <label class="control-label">Dil</label>
               <div class="select-wrap">
-                <input
-                  type="text"
-                  id="languageSearch"
-                  placeholder="Dil ara..."
-                  class="language-search"
-                />
+                <input type="text" id="languageSearch" placeholder="Dil ara..." class="language-search" />
                 <select id="languageSelect" size="5" class="language-dropdown">
                     {% for lang in voices %}
                     <option value="{{ lang }}" {% if lang == "Turkish" %}selected{% endif %}>{{ lang }}</option>
@@ -302,67 +296,30 @@
             <div class="control-group flex-2">
               <label class="control-label">Ses</label>
               <div class="select-wrap">
-                <input
-                  type="text"
-                  id="voiceSearch"
-                  placeholder="Ses ara..."
-                  class="voice-search"
-                />
-                <select
-                  id="voiceSelect"
-                  size="5"
-                  class="voice-dropdown"
-                ></select>
+                <input type="text" id="voiceSearch" placeholder="Ses ara..." class="voice-search" />
+                <select id="voiceSelect" size="5" class="voice-dropdown"></select>
               </div>
             </div>
           </div>
 
-          <!-- Sliders -->
           <div class="control-row sliders-row">
             <div class="control-group">
               <label class="control-label">
-                Hız
-                <span class="slider-value" id="rateValue">0%</span>
+                Hız <span class="slider-value" id="rateValue">0%</span>
               </label>
-              <input
-                type="range"
-                id="rateSlider"
-                class="styled-slider"
-                min="-50"
-                max="100"
-                value="0"
-                step="5"
-              />
+              <input type="range" id="rateSlider" class="styled-slider" min="-50" max="100" value="0" step="5" />
             </div>
             <div class="control-group">
               <label class="control-label">
-                Ton
-                <span class="slider-value" id="pitchValue">0Hz</span>
+                Ton <span class="slider-value" id="pitchValue">0Hz</span>
               </label>
-              <input
-                type="range"
-                id="pitchSlider"
-                class="styled-slider"
-                min="-50"
-                max="50"
-                value="0"
-                step="5"
-              />
+              <input type="range" id="pitchSlider" class="styled-slider" min="-50" max="50" value="0" step="5" />
             </div>
             <div class="control-group">
               <label class="control-label">
-                Ses Seviyesi
-                <span class="slider-value" id="volumeValue">0%</span>
+                Ses Seviyesi <span class="slider-value" id="volumeValue">0%</span>
               </label>
-              <input
-                type="range"
-                id="volumeSlider"
-                class="styled-slider"
-                min="-50"
-                max="50"
-                value="0"
-                step="5"
-              />
+              <input type="range" id="volumeSlider" class="styled-slider" min="-50" max="50" value="0" step="5" />
             </div>
           </div>
         </section>
@@ -371,28 +328,14 @@
         <section class="action-section">
           <button class="synth-btn" id="synthBtn">
             <div class="btn-content">
-              <svg
-                class="btn-icon"
-                width="20"
-                height="20"
-                viewBox="0 0 20 20"
-                fill="none"
-              >
-                <path
-                  d="M10 2V18M10 2L6 6M10 2L14 6"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  class="icon-generate"
-                />
+              <svg class="btn-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M10 2V18M10 2L6 6M10 2L14 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-generate" />
               </svg>
               <span class="btn-text">Seslendir</span>
             </div>
             <div class="btn-loader">
               <div class="wave-bars">
-                <span></span><span></span><span></span><span></span
-                ><span></span>
+                <span></span><span></span><span></span><span></span><span></span>
               </div>
               <span>Oluşturuluyor...</span>
             </div>
@@ -403,45 +346,16 @@
         <section class="player-section" id="playerSection">
           <div class="player-card">
             <div class="player-visual">
-              <div class="waveform" id="waveform">
-                <!-- Bars generated by JS -->
-              </div>
+              <div class="waveform" id="waveform"></div>
             </div>
             <div class="player-controls">
               <button class="play-btn" id="playBtn">
-                <svg
-                  class="icon-play"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
+                <svg class="icon-play" width="24" height="24" viewBox="0 0 24 24" fill="none">
                   <path d="M8 5V19L19 12L8 5Z" fill="currentColor" />
                 </svg>
-                <svg
-                  class="icon-pause"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  style="display: none"
-                >
-                  <rect
-                    x="6"
-                    y="5"
-                    width="4"
-                    height="14"
-                    rx="1"
-                    fill="currentColor"
-                  />
-                  <rect
-                    x="14"
-                    y="5"
-                    width="4"
-                    height="14"
-                    rx="1"
-                    fill="currentColor"
-                  />
+                <svg class="icon-pause" width="24" height="24" viewBox="0 0 24 24" fill="none" style="display: none">
+                  <rect x="6" y="5" width="4" height="14" rx="1" fill="currentColor" />
+                  <rect x="14" y="5" width="4" height="14" rx="1" fill="currentColor" />
                 </svg>
               </button>
               <div class="time-bar">
@@ -456,28 +370,21 @@
               </div>
               <button class="download-btn" id="downloadBtn" title="İndir">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <path
-                    d="M10 3V13M10 13L6 9M10 13L14 9M3 17H17"
-                    stroke="currentColor"
-                    stroke-width="1.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
+                  <path d="M10 3V13M10 13L6 9M10 13L14 9M3 17H17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
               </button>
             </div>
           </div>
-          <!-- Seslendirme sonuç bilgisi -->
           <div class="synth-result-info" id="synthResultInfo">
-            <span class="result-chip" id="resultDuration">
+            <span class="result-chip">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
               <span id="resultDurationText"></span>
             </span>
-            <span class="result-chip" id="resultProcessing">
+            <span class="result-chip">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
               <span id="resultProcessingText"></span>
             </span>
-            <span class="result-chip" id="resultSize">
+            <span class="result-chip">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
               <span id="resultSizeText"></span>
             </span>
@@ -510,23 +417,22 @@
     </script>
     <script src="/static/app.js"></script>
     <script>
-      // ══════════════════════════════════════════
-      //  Tahmini Süre & Geçmiş — Ek JS
-      // ══════════════════════════════════════════
-
       (function () {
         const textInput = document.getElementById("textInput");
         const rateSlider = document.getElementById("rateSlider");
         const estimateDisplay = document.getElementById("estimateDisplay");
         const estimateBadges = document.getElementById("estimateBadges");
-        const synthResultInfo = document.getElementById("synthResultInfo");
         const historyToggle = document.getElementById("historyToggle");
         const historyList = document.getElementById("historyList");
         const historyCount = document.getElementById("historyCount");
-        const audioPlayer = document.getElementById("audioPlayer");
+        const playerSection = document.getElementById("playerSection");
 
         // ── Tahmini süre (debounced) ──
         let estimateTimer = null;
+
+        function formatRate(val) {
+          return (val >= 0 ? "+" : "") + val + "%";
+        }
 
         function updateEstimate() {
           const text = textInput.value.trim();
@@ -548,173 +454,25 @@
               });
               if (!res.ok) return;
               const data = await res.json();
-
               estimateDisplay.textContent = "≈ " + data.display;
-
               let badges = "";
               if (data.parallel) {
                 badges += '<span class="estimate-badge parallel-badge">⚡ Paralel</span>';
               }
               badges += '<span class="estimate-badge">' + data.char_count.toLocaleString("tr-TR") + " karakter</span>";
               estimateBadges.innerHTML = badges;
-            } catch (e) {
-              // sessizce devam et
-            }
+            } catch (e) { /* sessiz */ }
           }, 400);
-        }
-
-        function formatRate(val) {
-          return (val >= 0 ? "+" : "") + val + "%";
         }
 
         textInput.addEventListener("input", updateEstimate);
         rateSlider.addEventListener("input", updateEstimate);
 
-        // ── Seslendirme sonuç bilgisini göster ──
-        // synthesize yanıtını yakala — mevcut app.js'deki fetch'i override etmeden
-        // sonuç bilgisini göstermek için bir MutationObserver veya
-        // doğrudan playerSection'ın görünürlüğünü izle
-        const playerSection = document.getElementById("playerSection");
-
-        // synthesize sonuçlarını yakalamak için global bir hook
-        window._onSynthResult = function (data) {
-          if (!data || data.error) return;
-
-          const info = document.getElementById("synthResultInfo");
-          document.getElementById("resultDurationText").textContent =
-            data.duration_display || "—";
-          document.getElementById("resultProcessingText").textContent =
-            data.processing_time + " sn" + (data.parallel ? " (paralel)" : "");
-          document.getElementById("resultSizeText").textContent =
-            formatFileSize(data.size);
-          info.classList.add("visible");
-
-          // Geçmişi yenile
-          loadHistory();
-        };
-
+        // ── Dosya boyutu formatlayıcı ──
         function formatFileSize(bytes) {
           if (bytes < 1024) return bytes + " B";
           if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
           return (bytes / 1048576).toFixed(1) + " MB";
-        }
-
-        // ── Geçmiş paneli ──
-        let historyOpen = false;
-
-        historyToggle.addEventListener("click", () => {
-          historyOpen = !historyOpen;
-          historyToggle.classList.toggle("open", historyOpen);
-          historyList.classList.toggle("open", historyOpen);
-          if (historyOpen) loadHistory();
-        });
-
-        async function loadHistory() {
-          try {
-            const res = await fetch("/history");
-            if (!res.ok) return;
-            const data = await res.json();
-            const items = data.history || [];
-
-            historyCount.textContent = items.length;
-
-            if (items.length === 0) {
-              historyList.innerHTML =
-                '<div class="history-empty">Henüz seslendirme yapılmadı</div>';
-              return;
-            }
-
-            historyList.innerHTML = items
-              .map(
-                (item) => `
-              <div class="history-item" data-filename="${item.filename}">
-                <div class="hi-body">
-                  <div class="hi-preview">${escapeHtml(item.text_preview)}</div>
-                  <div class="hi-meta">
-                    <span>${item.voice_label}</span>
-                    <span>·</span>
-                    <span>${item.duration_display || "—"}</span>
-                    <span>·</span>
-                    <span>${formatFileSize(item.file_size)}</span>
-                    <span>·</span>
-                    <span>${item.created_at}</span>
-                  </div>
-                </div>
-                <div class="hi-actions">
-                  <button class="hi-play" title="Dinle" data-filename="${item.filename}">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5V19L19 12L8 5Z"/></svg>
-                  </button>
-                  <button class="hi-download" title="İndir" data-filename="${item.filename}">
-                    <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3V13M10 13L6 9M10 13L14 9M3 17H17"/></svg>
-                  </button>
-                  <button class="hi-delete" title="Sil" data-filename="${item.filename}">
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 4L12 12M12 4L4 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-                  </button>
-                </div>
-              </div>
-            `
-              )
-              .join("");
-
-            // Event delegation
-            historyList.querySelectorAll(".hi-play").forEach((btn) => {
-              btn.addEventListener("click", (e) => {
-                e.stopPropagation();
-                const fn = btn.dataset.filename;
-                audioPlayer.src = "/audio/" + fn;
-                audioPlayer.play();
-
-                // Ana player'ı da göster
-                playerSection.classList.add("visible");
-                if (typeof window._showPlayer === "function") {
-                  window._showPlayer(fn);
-                }
-              });
-            });
-
-            historyList.querySelectorAll(".hi-download").forEach((btn) => {
-              btn.addEventListener("click", (e) => {
-                e.stopPropagation();
-                const fn = btn.dataset.filename;
-                const a = document.createElement("a");
-                a.href = "/download/" + fn;
-                a.download = "sesforge_" + fn;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-              });
-            });
-
-            historyList.querySelectorAll(".hi-delete").forEach((btn) => {
-              btn.addEventListener("click", async (e) => {
-                e.stopPropagation();
-                const fn = btn.dataset.filename;
-                try {
-                  await fetch("/history/" + fn, { method: "DELETE" });
-                  const item = btn.closest(".history-item");
-                  if (item) {
-                    item.style.transition = "all 0.3s ease";
-                    item.style.opacity = "0";
-                    item.style.transform = "translateX(20px)";
-                    setTimeout(() => {
-                      item.remove();
-                      const remaining =
-                        historyList.querySelectorAll(".history-item").length;
-                      historyCount.textContent = remaining;
-                      if (remaining === 0) {
-                        historyList.innerHTML =
-                          '<div class="history-empty">Henüz seslendirme yapılmadı</div>';
-                      }
-                    }, 300);
-                  }
-                } catch (e) {
-                  // sessizce devam et
-                }
-              });
-            });
-          } catch (e) {
-            // sessizce devam et
-          }
         }
 
         function escapeHtml(str) {
@@ -723,8 +481,138 @@
           return d.innerHTML;
         }
 
-        // Sayfa yüklendiğinde geçmişi hazırla (sayısını göster)
-        loadHistory();
+        // ══════════════════════════════════════
+        //  Seslendirme sonucu hook
+        //  synthesize yanıtı artık history[] de
+        //  içeriyor — ayrı GET gerekmez
+        // ══════════════════════════════════════
+        window._onSynthResult = function (data) {
+          if (!data || data.error) return;
+
+          // Sonuç chip'leri
+          document.getElementById("resultDurationText").textContent =
+            data.duration_display || "—";
+          document.getElementById("resultProcessingText").textContent =
+            data.processing_time + " sn" + (data.parallel ? " (paralel)" : "");
+          document.getElementById("resultSizeText").textContent =
+            formatFileSize(data.size);
+          document.getElementById("synthResultInfo").classList.add("visible");
+
+          // Geçmişi doğrudan yanıttan render et (GET yok, race condition yok)
+          if (data.history) {
+            renderHistory(data.history);
+          }
+        };
+
+        // ══════════════════════════════════════
+        //  Geçmiş paneli
+        // ══════════════════════════════════════
+        let historyOpen = false;
+
+        historyToggle.addEventListener("click", () => {
+          historyOpen = !historyOpen;
+          historyToggle.classList.toggle("open", historyOpen);
+          historyList.classList.toggle("open", historyOpen);
+          if (historyOpen) fetchAndRenderHistory();
+        });
+
+        // GET /history — sadece toggle açılınca veya sayfa yüklenince
+        async function fetchAndRenderHistory() {
+          try {
+            const res = await fetch("/history");
+            if (!res.ok) return;
+            const data = await res.json();
+            renderHistory(data.history || []);
+          } catch (e) { /* sessiz */ }
+        }
+
+        // Geçmişi DOM'a yaz
+        function renderHistory(items) {
+          historyCount.textContent = items.length;
+
+          if (items.length === 0) {
+            historyList.innerHTML = '<div class="history-empty">Henüz seslendirme yapılmadı</div>';
+            return;
+          }
+
+          historyList.innerHTML = items.map((item) => `
+            <div class="history-item" data-filename="${item.filename}">
+              <div class="hi-body">
+                <div class="hi-preview">${escapeHtml(item.text_preview)}</div>
+                <div class="hi-meta">
+                  <span>${escapeHtml(item.voice_label)}</span>
+                  <span>·</span>
+                  <span>${item.duration_display || "—"}</span>
+                  <span>·</span>
+                  <span>${formatFileSize(item.file_size)}</span>
+                  <span>·</span>
+                  <span>${item.created_at}</span>
+                </div>
+              </div>
+              <div class="hi-actions">
+                <button class="hi-play" title="Dinle" data-filename="${item.filename}">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5V19L19 12L8 5Z"/></svg>
+                </button>
+                <button class="hi-download" title="İndir" data-filename="${item.filename}">
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3V13M10 13L6 9M10 13L14 9M3 17H17"/></svg>
+                </button>
+                <button class="hi-delete" title="Sil" data-filename="${item.filename}">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 4L12 12M12 4L4 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                </button>
+              </div>
+            </div>
+          `).join("");
+
+          // ── Event listeners ──
+          historyList.querySelectorAll(".hi-play").forEach((btn) => {
+            btn.addEventListener("click", (e) => {
+              e.stopPropagation();
+              // Sadece _showPlayer çağır — double play yok
+              if (typeof window._showPlayer === "function") {
+                window._showPlayer(btn.dataset.filename);
+              }
+            });
+          });
+
+          historyList.querySelectorAll(".hi-download").forEach((btn) => {
+            btn.addEventListener("click", (e) => {
+              e.stopPropagation();
+              const a = document.createElement("a");
+              a.href = "/download/" + btn.dataset.filename;
+              a.download = "sesforge_" + btn.dataset.filename;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+            });
+          });
+
+          historyList.querySelectorAll(".hi-delete").forEach((btn) => {
+            btn.addEventListener("click", async (e) => {
+              e.stopPropagation();
+              const fn = btn.dataset.filename;
+              try {
+                await fetch("/history/" + fn, { method: "DELETE" });
+                const item = btn.closest(".history-item");
+                if (item) {
+                  item.style.transition = "all 0.3s ease";
+                  item.style.opacity = "0";
+                  item.style.transform = "translateX(20px)";
+                  setTimeout(() => {
+                    item.remove();
+                    const remaining = historyList.querySelectorAll(".history-item").length;
+                    historyCount.textContent = remaining;
+                    if (remaining === 0) {
+                      historyList.innerHTML = '<div class="history-empty">Henüz seslendirme yapılmadı</div>';
+                    }
+                  }, 300);
+                }
+              } catch (e) { /* sessiz */ }
+            });
+          });
+        }
+
+        // Sayfa yüklendiğinde geçmişi çek (sadece sayıyı göstermek için)
+        fetchAndRenderHistory();
       })();
     </script>
   </body>
