@@ -7,11 +7,16 @@ import re
 import uuid
 import time
 import threading
+from collections import deque
 
 app = Flask(__name__)
 
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+# ── Seslendirme geçmişi (son 50 kayıt) ──
+synthesis_history = deque(maxlen=10)
+history_lock = threading.Lock()
 
 
 # Ses dosyalarını belirli süre sonra temizle
@@ -26,6 +31,15 @@ def cleanup_old_files():
                     os.remove(filepath)
                 except Exception:
                     pass
+        # Geçmişten silinen dosyaları da temizle
+        with history_lock:
+            to_keep = deque(maxlen=10)
+            for entry in synthesis_history:
+                filepath = os.path.join(OUTPUT_DIR, entry["filename"])
+                if os.path.exists(filepath):
+                    to_keep.append(entry)
+            synthesis_history.clear()
+            synthesis_history.extend(to_keep)
 
 
 cleanup_thread = threading.Thread(target=cleanup_old_files, daemon=True)
@@ -214,6 +228,12 @@ for lang_voices in VOICES.values():
     for v in lang_voices:
         VALID_VOICES.add(v["name"])
 
+# Ses adı → etiket eşlemesi (geçmiş için)
+VOICE_LABEL_MAP = {}
+for lang, lang_voices in VOICES.items():
+    for v in lang_voices:
+        VOICE_LABEL_MAP[v["name"]] = f"{v['label']} — {lang}"
+
 
 # ── Doğrulama yardımcıları ──
 def validate_rate(rate):
@@ -237,16 +257,47 @@ def validate_volume(volume):
     return False
 
 
+# ── Tahmini süre hesaplayıcı ──
+def estimate_duration_seconds(text, rate_str):
+    """
+    Karakter sayısı ve hız ayarına göre tahmini ses süresi (saniye).
+    Ortalama TTS hızı: ~14 karakter/saniye (normal hız).
+    Rate parametresi bunu oranlar: +50% → 1.5x hızlı → süre / 1.5
+    """
+    base_chars_per_sec = 14.0
+    rate_val = int(rate_str.replace("%", ""))
+    speed_multiplier = 1.0 + (rate_val / 100.0)
+    speed_multiplier = max(0.3, min(2.5, speed_multiplier))
+
+    effective_cps = base_chars_per_sec * speed_multiplier
+    char_count = len(text.strip())
+
+    return round(char_count / effective_cps)
+
+
+def format_duration(seconds):
+    """Saniyeyi okunabilir formata çevirir."""
+    if seconds < 60:
+        return f"{seconds} sn"
+    elif seconds < 3600:
+        mins = seconds // 60
+        secs = seconds % 60
+        return f"{mins} dk {secs} sn" if secs > 0 else f"{mins} dk"
+    else:
+        hours = seconds // 3600
+        mins = (seconds % 3600) // 60
+        return f"{hours} sa {mins} dk" if mins > 0 else f"{hours} sa"
+
+
 # ── Metin bölme yardımcısı ──
 def split_text_smart(text):
     """
     Metni ortadan ikiye böler ama cümle veya en azından kelime sınırından keser.
-    Cümle sonu işaretleri (.  !  ?  ;  \n) tercih edilir.
+    Cümle sonu işaretleri (.  !  ?  ;  \\n) tercih edilir.
     Bulunamazsa en yakın boşluktan keser.
     """
     midpoint = len(text) // 2
 
-    # Ortaya en yakın cümle sonu işaretini bul (±%20 tolerans)
     search_start = max(0, midpoint - len(text) // 5)
     search_end = min(len(text), midpoint + len(text) // 5)
     search_zone = text[search_start:search_end]
@@ -256,7 +307,7 @@ def split_text_smart(text):
 
     for i, ch in enumerate(search_zone):
         if ch in '.!?;\n':
-            absolute_pos = search_start + i + 1  # kesim noktası karakterden sonra
+            absolute_pos = search_start + i + 1
             distance = abs(absolute_pos - midpoint)
             if distance < best_distance:
                 best_distance = distance
@@ -265,20 +316,88 @@ def split_text_smart(text):
     if best_pos != -1:
         return text[:best_pos].strip(), text[best_pos:].strip()
 
-    # Cümle sonu bulunamadıysa en yakın boşluktan kes
     for offset in range(0, len(text) // 5):
         if midpoint + offset < len(text) and text[midpoint + offset] == ' ':
             return text[:midpoint + offset].strip(), text[midpoint + offset:].strip()
         if midpoint - offset >= 0 and text[midpoint - offset] == ' ':
             return text[:midpoint - offset].strip(), text[midpoint - offset:].strip()
 
-    # Hiçbir uygun nokta yoksa direkt ortadan kes
     return text[:midpoint], text[midpoint:]
 
 
 @app.route("/")
 def index():
     return render_template("index.html", voices=VOICES)
+
+
+@app.route("/estimate", methods=["POST"])
+def estimate():
+    """Metin ve hız ayarına göre tahmini ses süresini döndürür."""
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Geçersiz istek formatı"}), 400
+
+    text = data.get("text", "").strip()
+    rate = data.get("rate", "+0%")
+
+    if not text:
+        return jsonify({"estimated_seconds": 0, "display": "0 sn"})
+
+    if not validate_rate(rate):
+        rate = "+0%"
+
+    seconds = estimate_duration_seconds(text, rate)
+
+    return jsonify({
+        "estimated_seconds": seconds,
+        "display": format_duration(seconds),
+        "char_count": len(text),
+        "parallel": len(text) > 5000,
+    })
+
+
+@app.route("/history", methods=["GET"])
+def get_history():
+    """Son seslendirme geçmişini döndürür (en yeniden en eskiye)."""
+    with history_lock:
+        active = []
+        for entry in reversed(synthesis_history):
+            filepath = os.path.join(OUTPUT_DIR, entry["filename"])
+            if os.path.exists(filepath):
+                active.append(entry)
+        return jsonify({"history": active})
+
+
+@app.route("/history/<filename>", methods=["DELETE"])
+def delete_history(filename):
+    """Geçmişten bir kaydı ve ses dosyasını siler."""
+    filename = secure_filename(filename)
+    if not filename:
+        return jsonify({"error": "Geçersiz dosya adı"}), 400
+
+    filepath = os.path.join(OUTPUT_DIR, filename)
+
+    with history_lock:
+        to_keep = deque(maxlen=10)
+        found = False
+        for entry in synthesis_history:
+            if entry["filename"] == filename:
+                found = True
+            else:
+                to_keep.append(entry)
+        synthesis_history.clear()
+        synthesis_history.extend(to_keep)
+
+    if os.path.exists(filepath):
+        try:
+            os.remove(filepath)
+        except Exception:
+            pass
+
+    if not found:
+        return jsonify({"error": "Kayıt bulunamadı"}), 404
+
+    return jsonify({"success": True})
 
 
 @app.route("/synthesize", methods=["POST"])
@@ -315,6 +434,7 @@ def synthesize():
     final_filename = f"{uuid.uuid4().hex}.mp3"
     final_filepath = os.path.join(OUTPUT_DIR, final_filename)
 
+    start_time = time.time()
     use_parallel = len(text) > 5000
 
     if use_parallel:
@@ -333,14 +453,12 @@ def synthesize():
                 part2_text, voice, rate=rate, pitch=pitch, volume=volume
             ).save(part2_file)
 
-            # İki parçayı aynı anda çalıştır
             await asyncio.gather(task1, task2)
 
         loop = asyncio.new_event_loop()
         try:
             loop.run_until_complete(generate_parallel())
         except Exception as e:
-            # Geçici dosyaları temizle
             for tmp in (part1_file, part2_file):
                 if os.path.exists(tmp):
                     try:
@@ -365,7 +483,6 @@ def synthesize():
         except Exception as e:
             return jsonify({"error": f"Dosya birleştirme hatası: {str(e)}"}), 500
         finally:
-            # Geçici dosyaları temizle
             for tmp in (part1_file, part2_file):
                 if os.path.exists(tmp):
                     try:
@@ -395,8 +512,41 @@ def synthesize():
     if not os.path.exists(final_filepath):
         return jsonify({"error": "Ses dosyası oluşturulamadı"}), 500
 
+    elapsed = round(time.time() - start_time, 1)
     file_size = os.path.getsize(final_filepath)
-    return jsonify({"filename": final_filename, "size": file_size})
+    estimated_duration = estimate_duration_seconds(text, rate)
+
+    # ── Geçmişe ekle ──
+    text_preview = text[:120].replace("\n", " ")
+    if len(text) > 120:
+        text_preview += "…"
+
+    history_entry = {
+        "filename": final_filename,
+        "text_preview": text_preview,
+        "voice": voice,
+        "voice_label": VOICE_LABEL_MAP.get(voice, voice),
+        "char_count": len(text),
+        "file_size": file_size,
+        "estimated_duration": estimated_duration,
+        "duration_display": format_duration(estimated_duration),
+        "processing_time": elapsed,
+        "parallel": use_parallel,
+        "created_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "timestamp": int(time.time()),
+    }
+
+    with history_lock:
+        synthesis_history.append(history_entry)
+
+    return jsonify({
+        "filename": final_filename,
+        "size": file_size,
+        "processing_time": elapsed,
+        "estimated_duration": estimated_duration,
+        "duration_display": format_duration(estimated_duration),
+        "parallel": use_parallel,
+    })
 
 
 @app.route("/audio/<filename>")

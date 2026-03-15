@@ -11,6 +11,211 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/static/style.css" />
+    <style>
+      /* ── Tahmini Süre Gösterimi ── */
+      .estimate-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.8rem;
+        color: var(--text-2, #888);
+        font-family: 'JetBrains Mono', monospace;
+        gap: 1rem;
+        min-height: 1.75rem;
+      }
+      .estimate-bar .estimate-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .estimate-bar .estimate-icon {
+        opacity: 0.5;
+      }
+      .estimate-bar .estimate-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.15rem 0.5rem;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 500;
+        background: var(--accent-dim, rgba(99, 102, 241, 0.12));
+        color: var(--accent, #6366f1);
+      }
+      .estimate-bar .parallel-badge {
+        background: rgba(234, 179, 8, 0.12);
+        color: #eab308;
+      }
+
+      /* ── Seslendirme Sonuç Bilgisi ── */
+      .synth-result-info {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        padding: 0.5rem 0;
+        font-size: 0.75rem;
+        color: var(--text-2, #888);
+        font-family: 'JetBrains Mono', monospace;
+        flex-wrap: wrap;
+      }
+      .synth-result-info.visible {
+        display: flex;
+      }
+      .synth-result-info .result-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 6px;
+        background: var(--surface-2, rgba(255,255,255,0.04));
+        border: 1px solid var(--border, rgba(255,255,255,0.06));
+      }
+
+      /* ── Geçmiş Paneli ── */
+      .history-section {
+        margin-top: 1rem;
+      }
+      .history-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--border, rgba(255,255,255,0.06));
+        border-radius: 12px;
+        background: var(--surface-1, rgba(255,255,255,0.02));
+        color: var(--text-2, #888);
+        cursor: pointer;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.85rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+      }
+      .history-toggle:hover {
+        background: var(--surface-2, rgba(255,255,255,0.04));
+        color: var(--text-1, #eee);
+      }
+      .history-toggle .toggle-left {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .history-toggle .history-count {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem;
+        padding: 0.1rem 0.45rem;
+        border-radius: 999px;
+        background: var(--accent-dim, rgba(99, 102, 241, 0.12));
+        color: var(--accent, #6366f1);
+      }
+      .history-toggle .toggle-arrow {
+        transition: transform 0.3s ease;
+      }
+      .history-toggle.open .toggle-arrow {
+        transform: rotate(180deg);
+      }
+
+      .history-list {
+        display: none;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+        max-height: 400px;
+        overflow-y: auto;
+        padding-right: 0.25rem;
+      }
+      .history-list.open {
+        display: flex;
+      }
+      .history-list::-webkit-scrollbar {
+        width: 4px;
+      }
+      .history-list::-webkit-scrollbar-thumb {
+        background: var(--border, rgba(255,255,255,0.08));
+        border-radius: 4px;
+      }
+
+      .history-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--border, rgba(255,255,255,0.06));
+        border-radius: 10px;
+        background: var(--surface-1, rgba(255,255,255,0.02));
+        transition: all 0.2s ease;
+        animation: historySlideIn 0.3s ease forwards;
+      }
+      @keyframes historySlideIn {
+        from { opacity: 0; transform: translateY(-8px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+      .history-item:hover {
+        background: var(--surface-2, rgba(255,255,255,0.04));
+        border-color: var(--border-hover, rgba(255,255,255,0.1));
+      }
+      .history-item .hi-body {
+        flex: 1;
+        min-width: 0;
+      }
+      .history-item .hi-preview {
+        font-size: 0.8rem;
+        color: var(--text-1, #eee);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-bottom: 0.25rem;
+        line-height: 1.3;
+      }
+      .history-item .hi-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.68rem;
+        color: var(--text-2, #888);
+        font-family: 'JetBrains Mono', monospace;
+        flex-wrap: wrap;
+      }
+      .history-item .hi-meta span {
+        white-space: nowrap;
+      }
+      .history-item .hi-actions {
+        display: flex;
+        gap: 0.35rem;
+        flex-shrink: 0;
+      }
+      .history-item .hi-actions button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        border: 1px solid var(--border, rgba(255,255,255,0.06));
+        background: transparent;
+        color: var(--text-2, #888);
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+      .history-item .hi-actions button:hover {
+        background: var(--surface-2, rgba(255,255,255,0.06));
+        color: var(--text-1, #eee);
+      }
+      .history-item .hi-actions button.hi-delete:hover {
+        background: rgba(239, 68, 68, 0.12);
+        color: #ef4444;
+        border-color: rgba(239, 68, 68, 0.2);
+      }
+
+      .history-empty {
+        text-align: center;
+        padding: 2rem 1rem;
+        color: var(--text-2, #888);
+        font-size: 0.8rem;
+      }
+    </style>
   </head>
   <body>
     <div class="grain-overlay"></div>
@@ -61,6 +266,16 @@
                 />
               </svg>
             </button>
+          </div>
+          <!-- Tahmini süre barı -->
+          <div class="estimate-bar" id="estimateBar">
+            <div class="estimate-info">
+              <svg class="estimate-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+              </svg>
+              <span id="estimateDisplay">—</span>
+            </div>
+            <div id="estimateBadges" style="display:flex;gap:0.4rem;"></div>
           </div>
         </section>
 
@@ -252,6 +467,36 @@
               </button>
             </div>
           </div>
+          <!-- Seslendirme sonuç bilgisi -->
+          <div class="synth-result-info" id="synthResultInfo">
+            <span class="result-chip" id="resultDuration">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span id="resultDurationText"></span>
+            </span>
+            <span class="result-chip" id="resultProcessing">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              <span id="resultProcessingText"></span>
+            </span>
+            <span class="result-chip" id="resultSize">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <span id="resultSizeText"></span>
+            </span>
+          </div>
+        </section>
+
+        <!-- Geçmiş -->
+        <section class="history-section" id="historySection">
+          <button class="history-toggle" id="historyToggle">
+            <span class="toggle-left">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+              </svg>
+              Seslendirme Geçmişi
+              <span class="history-count" id="historyCount">0</span>
+            </span>
+            <svg class="toggle-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="history-list" id="historyList"></div>
         </section>
       </main>
 
@@ -264,5 +509,223 @@
       const VOICES = {{ voices | tojson }};
     </script>
     <script src="/static/app.js"></script>
+    <script>
+      // ══════════════════════════════════════════
+      //  Tahmini Süre & Geçmiş — Ek JS
+      // ══════════════════════════════════════════
+
+      (function () {
+        const textInput = document.getElementById("textInput");
+        const rateSlider = document.getElementById("rateSlider");
+        const estimateDisplay = document.getElementById("estimateDisplay");
+        const estimateBadges = document.getElementById("estimateBadges");
+        const synthResultInfo = document.getElementById("synthResultInfo");
+        const historyToggle = document.getElementById("historyToggle");
+        const historyList = document.getElementById("historyList");
+        const historyCount = document.getElementById("historyCount");
+        const audioPlayer = document.getElementById("audioPlayer");
+
+        // ── Tahmini süre (debounced) ──
+        let estimateTimer = null;
+
+        function updateEstimate() {
+          const text = textInput.value.trim();
+          const rate = formatRate(parseInt(rateSlider.value));
+
+          if (!text) {
+            estimateDisplay.textContent = "—";
+            estimateBadges.innerHTML = "";
+            return;
+          }
+
+          clearTimeout(estimateTimer);
+          estimateTimer = setTimeout(async () => {
+            try {
+              const res = await fetch("/estimate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text, rate }),
+              });
+              if (!res.ok) return;
+              const data = await res.json();
+
+              estimateDisplay.textContent = "≈ " + data.display;
+
+              let badges = "";
+              if (data.parallel) {
+                badges += '<span class="estimate-badge parallel-badge">⚡ Paralel</span>';
+              }
+              badges += '<span class="estimate-badge">' + data.char_count.toLocaleString("tr-TR") + " karakter</span>";
+              estimateBadges.innerHTML = badges;
+            } catch (e) {
+              // sessizce devam et
+            }
+          }, 400);
+        }
+
+        function formatRate(val) {
+          return (val >= 0 ? "+" : "") + val + "%";
+        }
+
+        textInput.addEventListener("input", updateEstimate);
+        rateSlider.addEventListener("input", updateEstimate);
+
+        // ── Seslendirme sonuç bilgisini göster ──
+        // synthesize yanıtını yakala — mevcut app.js'deki fetch'i override etmeden
+        // sonuç bilgisini göstermek için bir MutationObserver veya
+        // doğrudan playerSection'ın görünürlüğünü izle
+        const playerSection = document.getElementById("playerSection");
+
+        // synthesize sonuçlarını yakalamak için global bir hook
+        window._onSynthResult = function (data) {
+          if (!data || data.error) return;
+
+          const info = document.getElementById("synthResultInfo");
+          document.getElementById("resultDurationText").textContent =
+            data.duration_display || "—";
+          document.getElementById("resultProcessingText").textContent =
+            data.processing_time + " sn" + (data.parallel ? " (paralel)" : "");
+          document.getElementById("resultSizeText").textContent =
+            formatFileSize(data.size);
+          info.classList.add("visible");
+
+          // Geçmişi yenile
+          loadHistory();
+        };
+
+        function formatFileSize(bytes) {
+          if (bytes < 1024) return bytes + " B";
+          if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
+          return (bytes / 1048576).toFixed(1) + " MB";
+        }
+
+        // ── Geçmiş paneli ──
+        let historyOpen = false;
+
+        historyToggle.addEventListener("click", () => {
+          historyOpen = !historyOpen;
+          historyToggle.classList.toggle("open", historyOpen);
+          historyList.classList.toggle("open", historyOpen);
+          if (historyOpen) loadHistory();
+        });
+
+        async function loadHistory() {
+          try {
+            const res = await fetch("/history");
+            if (!res.ok) return;
+            const data = await res.json();
+            const items = data.history || [];
+
+            historyCount.textContent = items.length;
+
+            if (items.length === 0) {
+              historyList.innerHTML =
+                '<div class="history-empty">Henüz seslendirme yapılmadı</div>';
+              return;
+            }
+
+            historyList.innerHTML = items
+              .map(
+                (item) => `
+              <div class="history-item" data-filename="${item.filename}">
+                <div class="hi-body">
+                  <div class="hi-preview">${escapeHtml(item.text_preview)}</div>
+                  <div class="hi-meta">
+                    <span>${item.voice_label}</span>
+                    <span>·</span>
+                    <span>${item.duration_display || "—"}</span>
+                    <span>·</span>
+                    <span>${formatFileSize(item.file_size)}</span>
+                    <span>·</span>
+                    <span>${item.created_at}</span>
+                  </div>
+                </div>
+                <div class="hi-actions">
+                  <button class="hi-play" title="Dinle" data-filename="${item.filename}">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5V19L19 12L8 5Z"/></svg>
+                  </button>
+                  <button class="hi-download" title="İndir" data-filename="${item.filename}">
+                    <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3V13M10 13L6 9M10 13L14 9M3 17H17"/></svg>
+                  </button>
+                  <button class="hi-delete" title="Sil" data-filename="${item.filename}">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 4L12 12M12 4L4 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                  </button>
+                </div>
+              </div>
+            `
+              )
+              .join("");
+
+            // Event delegation
+            historyList.querySelectorAll(".hi-play").forEach((btn) => {
+              btn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                const fn = btn.dataset.filename;
+                audioPlayer.src = "/audio/" + fn;
+                audioPlayer.play();
+
+                // Ana player'ı da göster
+                playerSection.classList.add("visible");
+                if (typeof window._showPlayer === "function") {
+                  window._showPlayer(fn);
+                }
+              });
+            });
+
+            historyList.querySelectorAll(".hi-download").forEach((btn) => {
+              btn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                const fn = btn.dataset.filename;
+                const a = document.createElement("a");
+                a.href = "/download/" + fn;
+                a.download = "sesforge_" + fn;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+              });
+            });
+
+            historyList.querySelectorAll(".hi-delete").forEach((btn) => {
+              btn.addEventListener("click", async (e) => {
+                e.stopPropagation();
+                const fn = btn.dataset.filename;
+                try {
+                  await fetch("/history/" + fn, { method: "DELETE" });
+                  const item = btn.closest(".history-item");
+                  if (item) {
+                    item.style.transition = "all 0.3s ease";
+                    item.style.opacity = "0";
+                    item.style.transform = "translateX(20px)";
+                    setTimeout(() => {
+                      item.remove();
+                      const remaining =
+                        historyList.querySelectorAll(".history-item").length;
+                      historyCount.textContent = remaining;
+                      if (remaining === 0) {
+                        historyList.innerHTML =
+                          '<div class="history-empty">Henüz seslendirme yapılmadı</div>';
+                      }
+                    }, 300);
+                  }
+                } catch (e) {
+                  // sessizce devam et
+                }
+              });
+            });
+          } catch (e) {
+            // sessizce devam et
+          }
+        }
+
+        function escapeHtml(str) {
+          const d = document.createElement("div");
+          d.textContent = str;
+          return d.innerHTML;
+        }
+
+        // Sayfa yüklendiğinde geçmişi hazırla (sayısını göster)
+        loadHistory();
+      })();
+    </script>
   </body>
 </html>
