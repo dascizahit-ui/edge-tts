@@ -13,6 +13,7 @@ app = Flask(__name__)
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
+
 # Ses dosyalarını belirli süre sonra temizle
 def cleanup_old_files():
     while True:
@@ -25,6 +26,7 @@ def cleanup_old_files():
                     os.remove(filepath)
                 except Exception:
                     pass
+
 
 cleanup_thread = threading.Thread(target=cleanup_old_files, daemon=True)
 cleanup_thread.start()
@@ -220,17 +222,58 @@ def validate_rate(rate):
         return -50 <= val <= 100
     return False
 
+
 def validate_pitch(pitch):
     if re.match(r'^[+-]\d{1,3}Hz$', pitch):
         val = int(pitch[:-2])
         return -50 <= val <= 50
     return False
 
+
 def validate_volume(volume):
     if re.match(r'^[+-]\d{1,3}%$', volume):
         val = int(volume[:-1])
         return -50 <= val <= 50
     return False
+
+
+# ── Metin bölme yardımcısı ──
+def split_text_smart(text):
+    """
+    Metni ortadan ikiye böler ama cümle veya en azından kelime sınırından keser.
+    Cümle sonu işaretleri (.  !  ?  ;  \n) tercih edilir.
+    Bulunamazsa en yakın boşluktan keser.
+    """
+    midpoint = len(text) // 2
+
+    # Ortaya en yakın cümle sonu işaretini bul (±%20 tolerans)
+    search_start = max(0, midpoint - len(text) // 5)
+    search_end = min(len(text), midpoint + len(text) // 5)
+    search_zone = text[search_start:search_end]
+
+    best_pos = -1
+    best_distance = len(text)
+
+    for i, ch in enumerate(search_zone):
+        if ch in '.!?;\n':
+            absolute_pos = search_start + i + 1  # kesim noktası karakterden sonra
+            distance = abs(absolute_pos - midpoint)
+            if distance < best_distance:
+                best_distance = distance
+                best_pos = absolute_pos
+
+    if best_pos != -1:
+        return text[:best_pos].strip(), text[best_pos:].strip()
+
+    # Cümle sonu bulunamadıysa en yakın boşluktan kes
+    for offset in range(0, len(text) // 5):
+        if midpoint + offset < len(text) and text[midpoint + offset] == ' ':
+            return text[:midpoint + offset].strip(), text[midpoint + offset:].strip()
+        if midpoint - offset >= 0 and text[midpoint - offset] == ' ':
+            return text[:midpoint - offset].strip(), text[midpoint - offset:].strip()
+
+    # Hiçbir uygun nokta yoksa direkt ortadan kes
+    return text[:midpoint], text[midpoint:]
 
 
 @app.route("/")
@@ -269,32 +312,91 @@ def synthesize():
     if not validate_volume(volume):
         return jsonify({"error": "Geçersiz ses seviyesi değeri"}), 400
 
-    filename = f"{uuid.uuid4().hex}.mp3"
-    filepath = os.path.join(OUTPUT_DIR, filename)
+    final_filename = f"{uuid.uuid4().hex}.mp3"
+    final_filepath = os.path.join(OUTPUT_DIR, final_filename)
 
-    async def generate():
-        communicate = edge_tts.Communicate(
-            text, voice, rate=rate, pitch=pitch, volume=volume
-        )
-        await communicate.save(filepath)
+    use_parallel = len(text) > 5000
 
-    # Güvenli asyncio — her istekte temiz event loop
-    loop = asyncio.new_event_loop()
-    try:
-        loop.run_until_complete(generate())
-    except Exception as e:
-        error_msg = str(e)
-        if "403" in error_msg:
-            return jsonify({"error": "Edge TTS servisine erişim engellendi. Lütfen tekrar deneyin."}), 503
-        return jsonify({"error": f"Seslendirme hatası: {error_msg}"}), 500
-    finally:
-        loop.close()
+    if use_parallel:
+        # ── Paralel seslendirme: metni ikiye böl, aynı anda seslendir ──
+        part1_text, part2_text = split_text_smart(text)
 
-    if not os.path.exists(filepath):
+        part1_file = os.path.join(OUTPUT_DIR, f"_tmp_{uuid.uuid4().hex}.mp3")
+        part2_file = os.path.join(OUTPUT_DIR, f"_tmp_{uuid.uuid4().hex}.mp3")
+
+        async def generate_parallel():
+            task1 = edge_tts.Communicate(
+                part1_text, voice, rate=rate, pitch=pitch, volume=volume
+            ).save(part1_file)
+
+            task2 = edge_tts.Communicate(
+                part2_text, voice, rate=rate, pitch=pitch, volume=volume
+            ).save(part2_file)
+
+            # İki parçayı aynı anda çalıştır
+            await asyncio.gather(task1, task2)
+
+        loop = asyncio.new_event_loop()
+        try:
+            loop.run_until_complete(generate_parallel())
+        except Exception as e:
+            # Geçici dosyaları temizle
+            for tmp in (part1_file, part2_file):
+                if os.path.exists(tmp):
+                    try:
+                        os.remove(tmp)
+                    except Exception:
+                        pass
+            error_msg = str(e)
+            if "403" in error_msg:
+                return jsonify({"error": "Edge TTS servisine erişim engellendi. Lütfen tekrar deneyin."}), 503
+            return jsonify({"error": f"Seslendirme hatası: {error_msg}"}), 500
+        finally:
+            loop.close()
+
+        # ── MP3 dosyalarını sıralı birleştir ──
+        try:
+            with open(final_filepath, "wb") as outfile:
+                for part_file in (part1_file, part2_file):
+                    if not os.path.exists(part_file):
+                        return jsonify({"error": "Parça ses dosyası oluşturulamadı"}), 500
+                    with open(part_file, "rb") as infile:
+                        outfile.write(infile.read())
+        except Exception as e:
+            return jsonify({"error": f"Dosya birleştirme hatası: {str(e)}"}), 500
+        finally:
+            # Geçici dosyaları temizle
+            for tmp in (part1_file, part2_file):
+                if os.path.exists(tmp):
+                    try:
+                        os.remove(tmp)
+                    except Exception:
+                        pass
+
+    else:
+        # ── Tek parça seslendirme (5000 karakter ve altı) ──
+        async def generate_single():
+            communicate = edge_tts.Communicate(
+                text, voice, rate=rate, pitch=pitch, volume=volume
+            )
+            await communicate.save(final_filepath)
+
+        loop = asyncio.new_event_loop()
+        try:
+            loop.run_until_complete(generate_single())
+        except Exception as e:
+            error_msg = str(e)
+            if "403" in error_msg:
+                return jsonify({"error": "Edge TTS servisine erişim engellendi. Lütfen tekrar deneyin."}), 503
+            return jsonify({"error": f"Seslendirme hatası: {error_msg}"}), 500
+        finally:
+            loop.close()
+
+    if not os.path.exists(final_filepath):
         return jsonify({"error": "Ses dosyası oluşturulamadı"}), 500
 
-    file_size = os.path.getsize(filepath)
-    return jsonify({"filename": filename, "size": file_size})
+    file_size = os.path.getsize(final_filepath)
+    return jsonify({"filename": final_filename, "size": file_size})
 
 
 @app.route("/audio/<filename>")
