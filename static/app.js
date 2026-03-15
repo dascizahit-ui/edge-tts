@@ -106,6 +106,17 @@ function showToast(msg, isError = true) {
   setTimeout(() => toast.classList.remove("show"), 3500);
 }
 
+// ---- Geçmişten player açma hook'u ----
+window._showPlayer = function (filename) {
+  currentFilename = filename;
+  audioPlayer.src = "/audio/" + filename;
+  audioPlayer.load();
+  playerSection.classList.remove("visible");
+  void playerSection.offsetWidth;
+  playerSection.classList.add("visible");
+  generateWaveformBars();
+};
+
 // ---- Synthesize ----
 synthBtn.addEventListener("click", async () => {
   const text = textInput.value.trim();
@@ -160,6 +171,9 @@ synthBtn.addEventListener("click", async () => {
     void playerSection.offsetWidth; // force reflow
     playerSection.classList.add("visible");
     generateWaveformBars();
+
+    // Sonuç bilgisini ve geçmişi güncelle
+    if (window._onSynthResult) window._onSynthResult(data);
 
     showToast("Ses başarıyla oluşturuldu!", false);
   } catch (err) {
